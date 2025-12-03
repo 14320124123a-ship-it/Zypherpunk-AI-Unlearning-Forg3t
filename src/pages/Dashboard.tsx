@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, FileText, Shield, Clock, CheckCircle, AlertCircle, ExternalLink, TrendingUp, Download, Eye, Hash, BarChart } from 'lucide-react';
+import { Brain, FileText, Clock, CheckCircle, AlertCircle, ExternalLink, TrendingUp, Download, Eye, Hash, BarChart } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { PDFGenerator } from '../lib/pdfGenerator';
 import { DebugLogger } from '../lib/debug';
-import { UserService } from '../lib/userService';
 
 interface UnlearningRequest {
   id: string;
@@ -54,7 +53,7 @@ export function Dashboard() {
           table: 'unlearning_requests',
           filter: `requested_by=eq.${user?.id}`
         },
-        (payload) => {
+        () => {
           DebugLogger.log('Real-time database update received');
           // Refresh the data when changes occur
           fetchUnlearningRequests();
@@ -74,7 +73,7 @@ export function Dashboard() {
 
     try {
       // Check if user profile exists
-      const { data: existingUser, error: selectError } = await supabase
+      const { error: selectError } = await supabase
         .from('users')
         .select('id')
         .eq('id', user.id)
