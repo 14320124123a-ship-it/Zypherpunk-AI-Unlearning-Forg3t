@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Zebra-based Zcash L1 node (devnet)
+  zebra:
+    image: zcash/zebra:latest
+    container_name: zebra-node
+    ports:
+      - "8232:8232"  # RPC port
+      - "8233:8233"  # Testnet RPC port
+      - "18232:18232" # Regtest RPC port
+    volumes:
+      - ./zebra-config:/zebrad-cache
+    command: ["zebrad", "start", "--config", "/zebrad-cache/zebrad.toml"]
+    networks:
+      - ztarknet-network
+
+  # Madara-based L2 node for Ztarknet
+  madara:
+    image: madara-book/latest:devnet-latest
+    container_name: madara-node
+    ports:
+      - "9944:9944"  # Substrate RPC port
+      - "30333:30333" # P2P port
+    volumes:
+      - ./madara-data:/madara-data
+    command: [
+      "madara",
+      "--chain=dev",
+      "--alice",
+      "--rpc-external",
+      "--unsafe-rpc-external",
+      "--rpc-methods=Unsafe",
+      "--no-mdns",
+      "--prometheus-external"
+    ]
+    depends_on:
+      - zebra
+    networks:
+      - ztarknet-network
+
+  # Prover service for Circle STARK proofs
+  prover:
+    image: lambdaclass/circle-prover:latest
+    container_name: circle-prover
+    ports:
+      - "50051:50051" # gRPC port
+    environment:
+      - RUST_LOG=info
+    networks:
+      - ztarknet-network
+
+networks:
+  ztarknet-network:
+    driver: bridge

@@ -1,0 +1,22 @@
+# Zcash testnet config for Forg3t
+
+testnet=1
+server=1
+listen=1
+txindex=1
+
+# rpc credentials
+rpcuser=forg3t_rpc
+rpcpassword=change_this_super_secret
+
+# only allow RPC from localhost
+rpcallowip=127.0.0.1
+rpcbind=127.0.0.1
+
+# default Zcash testnet ports
+rpcport=18232
+port=18233
+
+logtimestamps=1
+debug=rpc
+addnode=testnet.z.cash

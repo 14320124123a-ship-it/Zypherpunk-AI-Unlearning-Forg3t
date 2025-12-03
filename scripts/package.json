@@ -1,0 +1,12 @@
+{
+  "name": "forg3t-ztarknet-scripts",
+  "version": "1.0.0",
+  "description": "Test scripts for Ztarknet integration",
+  "main": "test-flow.js",
+  "scripts": {
+    "test": "node test-flow.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.52.1"
+  }
+}

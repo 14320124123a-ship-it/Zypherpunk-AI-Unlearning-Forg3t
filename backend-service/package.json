@@ -1,0 +1,33 @@
+{
+  "name": "ztarknet-bridge",
+  "version": "1.0.0",
+  "description": "Backend service to bridge Forg3t Protocol with Ztarknet",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "explorer": "ts-node src/explorer.ts",
+    "zcash:info": "ts-node src/scripts/zCashInfo.ts",
+    "zcash:test-proof": "ts-node src/scripts/sendTestUnlearningProof.ts",
+    "zcash:test-connection": "ts-node src/scripts/zCashTestConnection.ts",
+    "starknet:test": "ts-node src/scripts/testStarknet.ts",
+    "supabase:test": "ts-node src/scripts/testNewSupabase.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.52.1",
+    "@types/express": "^5.0.5",
+    "@types/uuid": "^10.0.0",
+    "@xchainjs/xchain-client": "^2.0.9",
+    "@xchainjs/xchain-util": "^2.0.5",
+    "@xchainjs/xchain-zcash": "^1.0.10",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "starknet": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}

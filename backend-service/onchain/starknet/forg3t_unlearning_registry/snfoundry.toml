@@ -1,0 +1,6 @@
+[profiles]
+default = "sepolia"
+
+[profiles.sepolia]
+url = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_10/21xJKr6s7H7ynN5UxElPx"
+account = "sepolia_account_1"

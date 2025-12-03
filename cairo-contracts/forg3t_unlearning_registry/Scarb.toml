@@ -1,0 +1,13 @@
+[package]
+name = "forg3t_unlearning_registry"
+version = "0.1.0"
+edition = "2023_10"
+
+[dependencies]
+starknet = "2.6.3"
+
+[[target.starknet-contract]]
+# Enable CASM generation
+casm = true
+# Enable ABI generation
+abi = true

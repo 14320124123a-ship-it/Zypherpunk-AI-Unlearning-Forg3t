@@ -1,0 +1,18 @@
+# Zcash regtest config for local testing
+
+regtest=1
+server=1
+listen=1
+txindex=1
+
+rpcuser=forg3t_rpc
+rpcpassword=change_this_super_secret
+
+rpcallowip=127.0.0.1
+rpcbind=127.0.0.1
+
+rpcport=18232
+port=18233
+
+logtimestamps=1
+debug=rpc
