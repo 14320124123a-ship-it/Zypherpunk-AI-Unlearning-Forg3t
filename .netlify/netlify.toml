@@ -1,0 +1,42 @@
+redirectsOrigin = "config"
+plugins = []
+functionsDirectory = "C:\\Users\\Alvinn\\Desktop\\Forg3t MVP Zcash --\\project\\netlify\\functions"
+functionsDirectoryOrigin = "config-v1"
+headers = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "C:\\Users\\Alvinn\\Desktop\\Forg3t MVP Zcash --\\project\\dist"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "npm run build"
+functions = "C:\\Users\\Alvinn\\Desktop\\Forg3t MVP Zcash --\\project\\netlify\\functions"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

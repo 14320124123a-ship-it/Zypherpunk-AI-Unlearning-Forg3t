@@ -1,3 +1,4 @@
+import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { 
   RpcProvider, 
@@ -13,8 +14,14 @@ import crypto from 'crypto';
 import { onUnlearningSuccess } from './services/unlearningRegistryService';
 import { registerUnlearningProof } from './starknet/starknetClient';
 import { recordUnlearningOnChains, UnlearningContext } from './services/onchainUnlearningService';
+import { submitL2Proof } from './proofAnchoring/ztarknetService';
+import { submitL1Proof } from './proofAnchoring/zcashService';
+import proofAnchorsRouter from './proofAnchoring/routes';
 
 dotenv.config();
+
+const app = express();
+app.use(express.json());
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -30,7 +37,11 @@ const CONFIG = {
   ZCASH_WALLET_MNEMONIC: process.env.ZCASH_WALLET_MNEMONIC || 'equip will roof matter pink blind book anxiety banner elbow sun young',
   ZCASH_WALLET_INDEX: parseInt(process.env.ZCASH_WALLET_INDEX || '0'),
   POLL_INTERVAL: 5000,
+  PORT: parseInt(process.env.PORT || '3000')
 };
+
+// Register API routes
+app.use('/api', proofAnchorsRouter);
 
 const provider = new RpcProvider({ nodeUrl: CONFIG.L2_RPC_ENDPOINT });
 const account = new Account(provider, CONFIG.STARKNET_ACCOUNT_ADDRESS, CONFIG.STARKNET_PRIVATE_KEY);
@@ -178,10 +189,89 @@ async function logUnlearningProof(jobId: string, userId: string | undefined, req
   }
 }
 
+// New function to handle proof anchoring
+async function anchorProof(job: any) {
+  try {
+    console.log(`Anchoring proof for job: ${job.id}`);
+    
+    // Compute proof hash
+    const proofHash = computeProofHash(job);
+    
+    // Submit to ZTarknet L2
+    console.log(`Submitting proof to ZTarknet L2 for job ${job.id}`);
+    const l2Result = await submitL2Proof(proofHash, job.id);
+    console.log(`ZTarknet L2 submission successful: ${l2Result.txHash}`);
+    
+    // Submit to Zcash L1 through Cloudflare tunnel
+    console.log(`Submitting proof to Zcash L1 for job ${job.id}`);
+    const l1Result = await submitL1Proof(proofHash, job.id);
+    console.log(`Zcash L1 submission successful: ${l1Result.txHash}`);
+    
+    // Update the job with proof anchoring information
+    const { error: updateError } = await supabase
+      .from('unlearning_requests')
+      .update({
+        audit_trail: {
+          ...job.audit_trail,
+          proof_hash: proofHash,
+          l2_tx_id: l2Result.txHash,
+          l2_block: l2Result.blockNumber,
+          l1_tze_tx_id: l1Result.txHash,
+          l1_block: l1Result.blockHeight
+        }
+      })
+      .eq('id', job.id);
+    
+    if (updateError) {
+      console.error(`Failed to update job ${job.id} with proof anchoring info:`, updateError);
+    } else {
+      console.log(`Successfully updated job ${job.id} with proof anchoring information`);
+    }
+    
+    return { proofHash, l2Result, l1Result };
+  } catch (error: any) {
+    console.error(`Error anchoring proof for job ${job.id}:`, error);
+    
+    // Log the error in the audit trail
+    try {
+      const { error: updateError } = await supabase
+        .from('unlearning_requests')
+        .update({
+          audit_trail: {
+            ...job.audit_trail,
+            proof_anchor_error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        })
+        .eq('id', job.id);
+      
+      if (updateError) {
+        console.error(`Failed to update job ${job.id} with proof anchoring error:`, updateError);
+      }
+    } catch (updateError: any) {
+      console.error(`Failed to record proof anchoring error for job ${job.id}:`, updateError);
+    }
+    
+    throw error;
+  }
+}
+
 async function processCompletedJob(job: any) {
   try {
     console.log(`Processing completed job: ${job.id}`);
     
+    // Check if this job has already been proof-anchored
+    const hasL2Anchor = job.audit_trail?.l2_tx_id;
+    const hasL1Anchor = job.audit_trail?.l1_tze_tx_id;
+    
+    if (hasL2Anchor && hasL1Anchor) {
+      console.log(`Job ${job.id} already proof-anchored, skipping`);
+      return;
+    }
+    
+    // Anchor the proof
+    await anchorProof(job);
+    
+    // Continue with existing on-chain unlearning registration
     const context: UnlearningContext = {
       jobId: job.id,
       modelId: job.model_id,
@@ -257,7 +347,6 @@ async function checkForCompletedJobs() {
       .from('unlearning_requests')
       .select('*')
       .eq('status', 'completed');
-      // Removed the filter for blockchain_tx_hash being null to process all completed jobs
     
     if (error) {
       console.error('Error fetching completed jobs:', error);
@@ -267,12 +356,11 @@ async function checkForCompletedJobs() {
     console.log(`Found ${jobs.length} completed jobs to process`);
     
     for (const job of jobs) {
-      // Only process jobs that haven't been processed yet (check if audit_trail has blockchain info)
-      if (!job.audit_trail || 
-          (!job.audit_trail.starknet_tx_hash && 
-           !job.audit_trail.zcash_tx_id && 
-           !job.audit_trail.l2_tx_id && 
-           !job.audit_trail.l1_tze_tx_id)) {
+      // Process jobs that haven't been proof-anchored yet
+      const hasProofAnchor = job.audit_trail && 
+        (job.audit_trail.l2_tx_id || job.audit_trail.l1_tze_tx_id);
+      
+      if (!hasProofAnchor) {
         await processCompletedJob(job);
       }
     }
@@ -282,6 +370,11 @@ async function checkForCompletedJobs() {
 }
 
 async function main() {
+  // Start the Express server
+  app.listen(CONFIG.PORT, () => {
+    console.log(`Backend service listening on port ${CONFIG.PORT}`);
+  });
+  
   console.log('Starting Forg3t Protocol - StarkNet Sepolia Integration Service...');
   console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
   console.log(`L2 RPC Endpoint: ${CONFIG.L2_RPC_ENDPOINT}`);

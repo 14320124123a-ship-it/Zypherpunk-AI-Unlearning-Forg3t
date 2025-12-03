@@ -19,7 +19,8 @@
     "cairo:build": "node scripts/build-cairo-contract.js",
     "cairo:deploy": "node scripts/deploy-cairo-contract.js",
     "prerequisites:check": "node scripts/check-prerequisites.js",
-    "integration:verify": "node scripts/verify-integration.js"
+    "integration:verify": "node scripts/verify-integration.js",
+    "blockchain:test": "node test-blockchain-integration.cjs"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.0",

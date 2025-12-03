@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { PDFGenerator } from '../lib/pdfGenerator';
 import { DebugLogger } from '../lib/debug';
+import { BlockchainStatusChecker } from '../components/BlockchainStatusChecker';
+import { ProofAnchorsPanel } from '../components/ProofAnchorsPanel';
 
 interface UnlearningRequest {
   id: string;
@@ -255,8 +257,8 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* Quick Actions and Blockchain Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Link
             to="/unlearning?type=black-box"
             className="bg-[#002d68] p-6 rounded-lg border border-gray-600 hover:border-[#60a5fa]/50 transition-colors group"
@@ -280,10 +282,12 @@ export function Dashboard() {
               </div>
             </div>
           </Link>
+
+          <BlockchainStatusChecker />
         </div>
 
         {/* Recent Requests */}
-        <div className="bg-[#002d68] rounded-lg border border-gray-600">
+        <div className="bg-[#002d68] rounded-lg border border-gray-600 mb-8">
           <div className="p-6 border-b border-gray-600">
             <h2 className="text-xl font-semibold text-white">Recent Unlearning Requests</h2>
           </div>
@@ -508,6 +512,25 @@ export function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Proof Anchors Section */}
+        {requests.filter(r => r.status === 'completed').length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Proof Anchoring Status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {requests
+                .filter(r => r.status === 'completed')
+                .slice(0, 3)
+                .map(request => (
+                  <ProofAnchorsPanel 
+                    key={request.id} 
+                    unlearningJobId={request.id} 
+                  />
+                ))
+              }
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

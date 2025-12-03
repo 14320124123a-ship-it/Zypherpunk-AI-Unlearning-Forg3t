@@ -5,7 +5,7 @@ import { FORG3T_UNLEARNING_REGISTRY_ABI } from './abiLoader';
 dotenv.config();
 
 const CONFIG = {
-  STARKNET_RPC_URL: process.env.STARKNET_RPC_URL || 'https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_10/21xJKr6s7H7ynN5UxElPx',
+  STARKNET_RPC_URL: process.env.STARKNET_RPC_URL || 'https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/21xJKr6s7H7ynN5UxElPx',
   STARKNET_REGISTRY_CONTRACT: process.env.STARKNET_REGISTRY_CONTRACT_ADDRESS || '0x074780159de36063c7560a170f5f3cdc4eb1405a7b574e1250998f69be4391c0',
   STARKNET_ACCOUNT_ADDRESS: process.env.STARKNET_ACCOUNT_ADDRESS || '0x07b3df7fc385a21ec33701978ed74ce292f933cba3caaeb12e6e0efed37b7f82',
   STARKNET_PRIVATE_KEY: process.env.STARKNET_PRIVATE_KEY || '',
@@ -41,19 +41,19 @@ export async function registerUnlearningProof(): Promise<{ txHash: string }> {
     const callData = new CallData(FORG3T_UNLEARNING_REGISTRY_ABI);
     const calldata = callData.compile("push_proof", []);
     
-    const feeEstimate = await account.estimateInvokeFee({
-      contractAddress: CONFIG.STARKNET_REGISTRY_CONTRACT,
-      entrypoint: "push_proof",
-      calldata: calldata
-    });
+    // Use 'latest' for nonce fetching to avoid RPC compatibility issues
+    const nonce = await account.getNonce('latest');
+    
+    // Use a fixed fee to avoid estimateInvokeFee issues with certain RPC endpoints
+    const maxFee = BigInt(1000000000000000); // 0.001 ETH in wei
     
     const { transaction_hash } = await account.execute({
       contractAddress: CONFIG.STARKNET_REGISTRY_CONTRACT,
       entrypoint: "push_proof",
       calldata: calldata
     }, undefined, {
-      maxFee: feeEstimate.suggestedMaxFee,
-      nonce: await account.getNonce(CONFIG.STARKNET_BLOCK_ID)
+      maxFee: maxFee,
+      nonce: nonce
     });
     
     console.log(`Unlearning proof registration submitted with transaction hash: ${transaction_hash}`);

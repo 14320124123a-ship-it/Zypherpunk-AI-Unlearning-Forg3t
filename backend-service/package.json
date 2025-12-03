@@ -12,7 +12,16 @@
     "zcash:test-proof": "ts-node src/scripts/sendTestUnlearningProof.ts",
     "zcash:test-connection": "ts-node src/scripts/zCashTestConnection.ts",
     "starknet:test": "ts-node src/scripts/testStarknet.ts",
-    "supabase:test": "ts-node src/scripts/testNewSupabase.ts"
+    "starknet:comprehensive": "ts-node src/scripts/comprehensiveStarknetTest.ts",
+    "supabase:test": "ts-node src/scripts/testNewSupabase.ts",
+    "blockchain:test": "ts-node src/scripts/blockchainIntegrationTest.ts",
+    "blockchain:simplified": "ts-node src/scripts/simplifiedBlockchainTest.ts",
+    "blockchain:status": "ts-node src/scripts/verifyBlockchainStatus.ts",
+    "job:verify": "ts-node src/scripts/verifyJobProcessing.ts",
+    "job:process": "ts-node src/scripts/manualProcessJobs.ts",
+    "test:data": "ts-node src/scripts/addTestData.ts",
+    "fix:rls": "ts-node src/scripts/fixRLSPolicies.ts",
+    "test:user-data": "ts-node src/scripts/addTestUserData.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.52.1",

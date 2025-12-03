@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables if they exist (in reverse order of dependencies)
+DROP TABLE IF EXISTS public.proof_anchors;
 DROP TABLE IF EXISTS public.unlearning_proof_log;
 DROP TABLE IF EXISTS public.unlearning_requests;
 DROP TABLE IF EXISTS public.models;
@@ -248,6 +249,61 @@ WITH CHECK (true);
 
 -- Grant permissions
 GRANT ALL ON TABLE unlearning_proof_log TO service_role;
+
+-- 6. Create proof_anchors table for storing proof anchoring information
+CREATE TABLE IF NOT EXISTS public.proof_anchors (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  unlearning_job_id UUID REFERENCES unlearning_requests(id) ON DELETE CASCADE,
+  proof_hash TEXT NOT NULL,
+  l2_tx TEXT,
+  l2_block INTEGER,
+  l1_tx TEXT,
+  l1_block INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for proof_anchors
+CREATE INDEX IF NOT EXISTS idx_proof_anchors_job_id ON proof_anchors(unlearning_job_id);
+CREATE INDEX IF NOT EXISTS idx_proof_anchors_l2_tx ON proof_anchors(l2_tx);
+CREATE INDEX IF NOT EXISTS idx_proof_anchors_l1_tx ON proof_anchors(l1_tx);
+CREATE INDEX IF NOT EXISTS idx_proof_anchors_created_at ON proof_anchors(created_at);
+
+-- Enable RLS for proof_anchors
+ALTER TABLE proof_anchors ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for proof_anchors
+DROP POLICY IF EXISTS "Users can view their own proof anchors" ON public.proof_anchors;
+CREATE POLICY "Users can view their own proof anchors" 
+ON proof_anchors FOR SELECT 
+TO authenticated 
+USING (
+  EXISTS (
+    SELECT 1 FROM unlearning_requests 
+    WHERE unlearning_requests.id = proof_anchors.unlearning_job_id 
+    AND unlearning_requests.user_id = auth.uid()
+  )
+);
+
+DROP POLICY IF EXISTS "Service role can view all proof anchors" ON public.proof_anchors;
+CREATE POLICY "Service role can view all proof anchors" 
+ON proof_anchors FOR SELECT 
+TO service_role 
+USING (true);
+
+DROP POLICY IF EXISTS "Service role can insert proof anchors" ON public.proof_anchors;
+CREATE POLICY "Service role can insert proof anchors" 
+ON proof_anchors FOR INSERT 
+TO service_role 
+WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Service role can update proof anchors" ON public.proof_anchors;
+CREATE POLICY "Service role can update proof anchors" 
+ON proof_anchors FOR UPDATE 
+TO service_role 
+USING (true);
+
+-- Grant permissions
+GRANT ALL ON TABLE proof_anchors TO service_role;
 
 -- Create a function to handle new user registration
 CREATE OR REPLACE FUNCTION public.handle_new_user()
